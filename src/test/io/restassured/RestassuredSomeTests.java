@@ -1,17 +1,14 @@
 package io.restassured;
 
-import static io.restassured.RestAssured.*;
-import static org.junit.Assert.assertEquals;
-
 import io.restassured.http.ContentType;
-import io.restassured.internal.path.json.mapping.JsonObjectDeserializer;
 import io.restassured.response.Response;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class RestassuredSomeTests {
@@ -171,8 +168,10 @@ public class RestassuredSomeTests {
                 .then().contentType(ContentType.JSON).extract().response();
         int statusCode = response.statusCode();
         assertEquals(200, statusCode);
-
-        System.out.println("response>" + response.body().asString());
+        String token = response.jsonPath().getString("token");
+        assertNotNull(token);
+        String result = response.jsonPath().getString("result");
+        System.out.println("result: " + result);
     }
 
 }
