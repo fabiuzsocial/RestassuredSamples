@@ -1,8 +1,16 @@
 package io.restassured;
 
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.*;
 
 import java.util.List;
 import java.util.Map;
@@ -13,17 +21,30 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RestassuredSomeTests {
 
+    private static RequestSpecification spec;
+
 
     private String username = "username";
     private String password = "password";
 
 
+    @BeforeAll
+    public static void setup (){
+
+        spec = new RequestSpecBuilder()
+                .setContentType(ContentType.JSON)
+                .setBaseUri("https://restful-booker.herokuapp.com")
+                .addFilter(new ResponseLoggingFilter())//log request and response for better debugging. You can also only log if a requests fails.
+                .addFilter(new RequestLoggingFilter())
+                .build();
+    }
+
     @Test
     public void testBookingEndpointExists() {
 
-        baseURI = "https://restful-booker.herokuapp.com";
-
-        when()
+//        baseURI = "https://restful-booker.herokuapp.com";
+        given().spec(spec)
+        .when()
                 .get(baseURI + "/booking")
                 .then()
                 .assertThat()
@@ -34,13 +55,14 @@ public class RestassuredSomeTests {
     @Test
     public void testResponseLength() {
 
-        baseURI = "https://restful-booker.herokuapp.com";
-        String responseString = given()
-                .headers("Content-Type", ContentType.JSON)
-                .when()
-                .get(baseURI + "/booking")
-                .then().extract().response()
-                .body().asString();
+//        baseURI = "https://restful-booker.herokuapp.com";
+        String responseString =
+                given().spec(spec)
+//                .headers("Content-Type", ContentType.JSON)
+                .when().get(baseURI + "/booking")
+                .then()
+                        .extract().response()
+                        .body().asString();
         assertEquals(162, responseString.length());
 
     }
@@ -48,17 +70,16 @@ public class RestassuredSomeTests {
     @Test
     public void testResponseContainsSomeJSON() {
 
-        baseURI = "https://restful-booker.herokuapp.com/";
+//        baseURI = "https://restful-booker.herokuapp.com/";
 
-        Response response = given()
-                .headers("Content-Type", ContentType.JSON)
-                .when()
-                .get("/booking")
-                .then().extract()
-                .response();
+        Response response = given().spec(spec)
+//                .headers("Content-Type", ContentType.JSON)
+                .when().get("/booking")
+                .then()
+                    .extract().response();
         List<Map<String, String>> jsonResponse = response.jsonPath().getList("$");
 
-        assertEquals(1, jsonResponse.get(0).get("bookingid"));
+        assertTrue( jsonResponse.size()>0);
     }
 
     @Test
@@ -112,11 +133,13 @@ public class RestassuredSomeTests {
                 "  }\n" +
                 "}";
 
-        Response response = given().
-                headers("Content-Type", ContentType.JSON).
-                body(myjson)
-                .when()
-                .post("/users").then().contentType(ContentType.JSON).extract().response();
+        Response response =
+                given()
+                        .headers("Content-Type", ContentType.JSON)
+                        .body(myjson)
+                .when().post("/users")
+                .then()
+                        .contentType(ContentType.JSON).extract().response();
         int statusCode = response.statusCode();
         assertEquals(201, statusCode);
 
@@ -130,7 +153,7 @@ public class RestassuredSomeTests {
 
     }
 
-    @Test
+/*    @Test
     public void testBasicAuth() {
 
         RestAssured.baseURI = "https://restful-booker.herokuapp.com/";
@@ -149,10 +172,10 @@ public class RestassuredSomeTests {
 
         System.out.println("response>" + response.body().asString());
     }
+*/
 
     @Test
     public void testBasicAuthentication() {
-
 
         baseURI = "https://bookstore.toolsqa.com";
 
@@ -173,5 +196,6 @@ public class RestassuredSomeTests {
         String result = response.jsonPath().getString("result");
         System.out.println("result: " + result);
     }
+
 
 }
